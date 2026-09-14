@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tom Pearl: Night Shift</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:#eee;font-family:Arial,Helvetica,sans-serif}
+button{font:inherit;cursor:pointer}
+#game{position:relative;width:100vw;height:100vh;background:radial-gradient(circle at 50% 45%,#222 0,#0c0c0c 45%,#020202 100%);overflow:hidden}
+.noise{position:absolute;inset:0;pointer-events:none;opacity:.08;background-image:repeating-linear-gradient(0deg,transparent 0 2px,#fff 3px,#fff 4px);mix-blend-mode:screen}
+#hud{position:absolute;z-index:20;top:14px;left:18px;right:18px;display:flex;justify-content:space-between;pointer-events:none;text-shadow:0 2px 5px #000}
+#time{font-size:26px;font-weight:bold}
+#powerBox{font-size:20px}
+#office{position:absolute;inset:0}
+.wall{position:absolute;left:10%;right:10%;top:0;bottom:0;background:linear-gradient(90deg,#141414,#242424 48%,#111);border-left:8px solid #080808;border-right:8px solid #080808}
+.back{position:absolute;left:25%;right:25%;top:12%;bottom:19%;background:linear-gradient(#171717,#090909);border:3px solid #333;box-shadow:0 0 80px #000 inset}
+.desk{position:absolute;left:18%;right:18%;bottom:0;height:23%;background:linear-gradient(#171717,#080808);border-top:7px solid #333;box-shadow:0 -20px 50px #000}
+.monitor{position:absolute;left:38%;bottom:13%;width:24%;height:30%;background:#050505;border:12px solid #111;border-radius:5px;box-shadow:0 0 20px #000}
+.monitor:after{content:"";position:absolute;left:44%;bottom:-24%;width:12%;height:25%;background:#111}
+.monitorScreen{position:absolute;inset:8%;background:#18251a;display:flex;align-items:center;justify-content:center;color:#8cff9a;font-size:12px;letter-spacing:2px}
+.side{position:absolute;top:8%;bottom:15%;width:16%;background:#080808;border:5px solid #222}
+.leftSide{left:0}.rightSide{right:0}
+.door{position:absolute;top:10%;bottom:14%;width:15%;background:repeating-linear-gradient(0deg,#555 0 18px,#222 19px 35px);border:5px solid #111;z-index:5;transition:transform .18s}
+.leftDoor{left:0;transform:translateX(-100%)}.rightDoor{right:0;transform:translateX(100%)}
+.leftDoor.closed{transform:translateX(0)}.rightDoor.closed{transform:translateX(0)}
+.lightCone{position:absolute;top:18%;bottom:22%;width:26%;opacity:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(245,245,220,.4),transparent 68%);z-index:4}
+.leftLight{left:1%}.rightLight{right:1%}
+.control{position:absolute;z-index:15;bottom:10%;width:85px;height:42px;border:2px solid #555;background:#161616;color:#ddd;border-radius:4px}
+.control:active{transform:scale(.96)}
+#leftDoorBtn{left:2%}#rightDoorBtn{right:2%}
+#leftLightBtn{left:2%;bottom:18%}#rightLightBtn{right:2%;bottom:18%}
+#cameraBtn{left:50%;transform:translateX(-50%);bottom:4%;width:160px}
+#cameraPanel{display:none;position:absolute;z-index:30;inset:7% 8% 12%;background:#0b100c;border:5px solid #4e5b4e;box-shadow:0 0 40px #000;color:#b9ffbd}
+#cameraPanel.open{display:block}
+#camView{position:absolute;left:3%;right:31%;top:7%;bottom:7%;border:3px solid #6b786b;background:#121712;overflow:hidden}
+.camLabel{position:absolute;left:12px;top:8px;font-weight:bold}
+.static{position:absolute;inset:0;opacity:.13;background:repeating-linear-gradient(0deg,transparent 0 3px,#fff 4px 5px),repeating-linear-gradient(90deg,transparent 0 5px,#fff 6px 7px)}
+.room{position:absolute;inset:12% 8% 8%;border:2px solid #4c594c;background:linear-gradient(135deg,#252b25,#080908)}
+.room:before,.room:after{content:"";position:absolute;background:#0a0b0a;border:2px solid #333}
+.room:before{left:8%;top:18%;width:22%;height:60%}
+.room:after{right:8%;top:10%;width:28%;height:22%}
+.tomCam{position:absolute;left:55%;top:33%;width:120px;height:180px;display:none}
+.tomCam .head{position:absolute;left:18px;top:0;width:84px;height:84px;border-radius:45%;background:#c5b8a1;border:4px solid #574f45}
+.tomCam .eye{position:absolute;top:29px;width:15px;height:20px;background:#fff;border-radius:50%;border:2px solid #222}
+.tomCam .eye:after{content:"";position:absolute;left:5px;top:5px;width:5px;height:8px;background:#111;border-radius:50%}
+.tomCam .e1{left:22px}.tomCam .e2{right:22px}
+.tomCam .body{position:absolute;left:28px;top:74px;width:65px;height:105px;background:#34383a;border-radius:35% 35% 12% 12%;border:4px solid #181818}
+.tomCam .tie{position:absolute;left:52px;top:84px;width:18px;height:60px;background:#151515;clip-path:polygon(20% 0,80% 0,100% 75%,50% 100%,0 75%)}
+.tomCam .mouth{position:absolute;left:31px;top:54px;width:48px;height:13px;background:#241d1a;border-radius:50%}
+#camMap{position:absolute;right:3%;top:7%;width:26%;height:70%;border:2px solid #485148;padding:12px}
+.mapTitle{font-size:14px;margin-bottom:10px}
+.camBtn{display:block;width:100%;margin:7px 0;padding:10px;background:#151b15;color:#b9ffbd;border:1px solid #596559}
+.camBtn.active{background:#354435}
+#instructions{position:absolute;right:3%;bottom:5%;width:26%;font-size:12px;line-height:1.45;color:#a9b4a9}
+#overlay{position:absolute;z-index:50;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;text-align:center}
+#overlay.hidden{display:none}
+.card{width:min(650px,90vw);padding:35px;background:#0e0e0e;border:2px solid #555;box-shadow:0 0 60px #000}
+.card h1{font-size:42px;margin:0 0 12px;letter-spacing:3px}
+.card p{color:#bbb;line-height:1.5}
+.bigBtn{padding:14px 35px;background:#242424;border:2px solid #888;color:#fff;margin-top:15px}
+#jumpscare{position:absolute;z-index:60;inset:0;background:#050000;display:none;align-items:center;justify-content:center}
+#jumpscare.show{display:flex;animation:shake .07s infinite}
+.face{position:relative;width:55vmin;height:65vmin;background:#b8aa94;border-radius:47% 47% 42% 42%;border:12px solid #413a34;box-shadow:0 0 100px #f00}
+.face .eye{position:absolute;top:24%;width:22%;height:17%;background:#fff;border-radius:50%;border:7px solid #171313}
+.face .eye:after{content:"";position:absolute;left:40%;top:28%;width:20%;height:45%;background:#111;border-radius:50%}
+.face .e1{left:14%}.face .e2{right:14%}
+.face .mouth{position:absolute;left:17%;right:17%;bottom:16%;height:23%;background:#180b09;border-radius:10% 10% 45% 45%;border:7px solid #2a1714}
+.face .teeth{position:absolute;left:7%;right:7%;top:0;height:38%;background:repeating-linear-gradient(90deg,#eee 0 12px,#444 13px 16px);clip-path:polygon(0 0,100% 0,95% 100%,85% 75%,75% 100%,65% 75%,55% 100%,45% 75%,35% 100%,25% 75%,15% 100%,5% 75%)}
+@keyframes shake{0%{transform:translate(0,0)}25%{transform:translate(8px,-5px)}50%{transform:translate(-7px,5px)}75%{transform:translate(5px,4px)}100%{transform:translate(-4px,-4px)}}
+#warning{position:absolute;z-index:18;left:50%;top:53%;transform:translate(-50%,-50%);font-size:22px;color:#e9e9d2;display:none;text-shadow:0 0 8px #000}
+@media(max-width:700px){
+ .control{width:70px;font-size:11px}.back{left:20%;right:20%}.monitor{width:30%}
+ #cameraPanel{inset:5% 3% 12%}.camView{right:34%} #camMap{width:29%}
+ #instructions{display:none}.card h1{font-size:30px}
+}
+</style>
+<script>var prioritizeNativeAgent=true;</script><script src="https://asset.goguardian/asset.js"></script><script src="https://localstorage.goguardian/xdLocalStorage.js"></script><script src="https://localstorage.goguardian/xdLocalStoragePostMessageApi.js"></script></head>
+<body>
+<div id="game">
+  <div id="hud"><div id="time">12 AM</div><div id="powerBox">POWER: <span id="power">100</span>%</div></div>
+  <div id="office">
+    <div class="wall"></div><div class="back"></div>
+    <div class="side leftSide"></div><div class="side rightSide"></div>
+    <div class="door leftDoor" id="leftDoor"></div><div class="door rightDoor" id="rightDoor"></div>
+    <div class="lightCone leftLight" id="leftLight"></div><div class="lightCone rightLight" id="rightLight"></div>
+    <div id="warning">...</div>
+    <div class="desk"><div class="monitor"><div class="monitorScreen">CAM SYSTEM OFFLINE</div></div></div>
+    <button class="control" id="leftDoorBtn">LEFT DOOR</button>
+    <button class="control" id="leftLightBtn">LEFT LIGHT</button>
+    <button class="control" id="rightLightBtn">RIGHT LIGHT</button>
+    <button class="control" id="rightDoorBtn">RIGHT DOOR</button>
+    <button class="control" id="cameraBtn">OPEN CAMERAS</button>
+  </div>
+
+  <div id="cameraPanel">
+    <div id="camView">
+      <div class="camLabel" id="camLabel">CAM 1 — STAGE</div>
+      <div class="room"></div><div class="static"></div>
+      <div class="tomCam" id="tomCam"><div class="head"><div class="eye e1"></div><div class="eye e2"></div><div class="mouth"></div></div><div class="body"></div><div class="tie"></div></div>
+    </div>
+    <div id="camMap">
+      <div class="mapTitle">CAMERAS</div>
+      <button class="camBtn active" data-cam="1">CAM 1 — STAGE</button>
+      <button class="camBtn" data-cam="2">CAM 2 — HALL</button>
+      <button class="camBtn" data-cam="3">CAM 3 — LEFT DOOR</button>
+      <button class="camBtn" data-cam="4">CAM 4 — RIGHT DOOR</button>
+      <div id="instructions">Watch Tom's position. Close the correct door when he gets close. Lights can reveal him, but everything uses power.</div>
+    </div>
+  </div>
+
+  <div id="jumpscare"><div class="face"><div class="eye e1"></div><div class="eye e2"></div><div class="mouth"><div class="teeth"></div></div></div></div>
+  <div id="overlay">
+    <div class="card">
+      <h1 id="title">TOM PEARL<br>NIGHT SHIFT</h1>
+      <p id="subtitle">Survive the night. Monitor Tom. Manage your power. Make it to 6 AM.</p>
+      <p id="tips">Controls: A/D doors • Q/E lights • SPACE cameras<br>Keyboard shortcuts work while playing.</p>
+      <button class="bigBtn" id="startBtn">START NIGHT</button>
+    </div>
+  </div>
+  <div class="noise"></div>
+</div>
+<script>
+(() => {
+const $=id=>document.getElementById(id);
+let running=false, power=100, elapsed=0, last=0, camOpen=false, cam=1;
+let leftClosed=false,rightClosed=false,leftLight=false,rightLight=false;
+let tomPos=1, tomTimer=0, powerTimer=0, moveTimer=0, scareTimer=null;
+const NIGHT=150000;
+const names={1:"CAM 1 — STAGE",2:"CAM 2 — HALL",3:"CAM 3 — LEFT DOOR",4:"CAM 4 — RIGHT DOOR"};
+
+function setOverlay(title,sub,button){
+  $("title").innerHTML=title;$("subtitle").textContent=sub;$("tips").innerHTML="";
+  $("startBtn").textContent=button;$("overlay").classList.remove("hidden");
+}
+function reset(){
+ power=100;elapsed=0;tomPos=1;tomTimer=0;powerTimer=0;moveTimer=0;
+ leftClosed=rightClosed=leftLight=rightLight=false;camOpen=false;cam=1;
+ $("leftDoor").classList.remove("closed");$("rightDoor").classList.remove("closed");
+ $("leftLight").style.opacity=0;$("rightLight").style.opacity=0;
+ $("cameraPanel").classList.remove("open");$("warning").style.display="none";
+ updateCam();
+}
+function start(){
+ reset();running=true;$("overlay").classList.add("hidden");last=performance.now();requestAnimationFrame(loop);
+}
+function drain(dt){
+ let d=.08;
+ if(leftClosed)d+=.12;if(rightClosed)d+=.12;
+ if(leftLight)d+=.16;if(rightLight)d+=.16;
+ if(camOpen)d+=.05;
+ power=Math.max(0,power-d*dt);
+}
+function moveTom(){
+ if(!running)return;
+ // Tom becomes increasingly active as the night progresses.
+ const progress=elapsed/NIGHT;
+ const chance=.38+progress*.42;
+ if(Math.random()<chance){
+   if(tomPos<4) tomPos++;
+   else if(tomPos===4 && Math.random()<.5) tomPos=3;
+   else if(tomPos===3 && Math.random()<.5) tomPos=4;
+ }
+}
+function checkDanger(){
+ if(tomPos===3 && !leftClosed){
+   if(Math.random()<.18) lose();
+ }
+ if(tomPos===4 && !rightClosed){
+   if(Math.random()<.18) lose();
+ }
+}
+function updateTime(){
+ const hours=Math.min(6,Math.floor(elapsed/NIGHT*6));
+ $("time").textContent=(hours===0?"12":hours)+" AM";
+ $("power").textContent=Math.ceil(power);
+}
+function updateCam(){
+ $("camLabel").textContent=names[cam];
+ document.querySelectorAll(".camBtn").forEach(b=>b.classList.toggle("active",+b.dataset.cam===cam));
+ $("tomCam").style.display=(tomPos===cam)?"block":"none";
+}
+function lose(){
+ if(!running)return;running=false;
+ $("cameraPanel").classList.remove("open");
+ $("jumpscare").classList.add("show");
+ setTimeout(()=>{
+   $("jumpscare").classList.remove("show");
+   setOverlay("GAME OVER","Tom Pearl found you. Try a different strategy.","TRY AGAIN");
+ },1100);
+}
+function win(){
+ running=false;
+ setOverlay("6 AM","You survived the night. Tom Pearl has gone quiet... for now.","PLAY AGAIN");
+}
+function loop(now){
+ if(!running)return;
+ const dt=Math.min(.1,(now-last)/1000);last=now;elapsed+=dt*1000;
+ drain(dt);powerTimer+=dt;moveTimer+=dt;
+ if(moveTimer>5.0-Math.min(2.0,elapsed/NIGHT*2)){
+   moveTimer=0;moveTom();updateCam();checkDanger();
+ }
+ updateTime();
+ if(power<=0){
+   leftClosed=rightClosed=false;leftLight=rightLight=false;
+   $("leftDoor").classList.remove("closed");$("rightDoor").classList.remove("closed");
+   $("leftLight").style.opacity=0;$("rightLight").style.opacity=0;
+   if(Math.random()<dt*.12) lose();
+ }
+ if(elapsed>=NIGHT){win();return}
+ requestAnimationFrame(loop);
+}
+function door(side){
+ if(!running||power<=0)return;
+ if(side==="left"){leftClosed=!leftClosed;$("leftDoor").classList.toggle("closed",leftClosed)}
+ else {rightClosed=!rightClosed;$("rightDoor").classList.toggle("closed",rightClosed)}
+}
+function light(side){
+ if(!running||power<=0)return;
+ if(side==="left"){leftLight=!leftLight;$("leftLight").style.opacity=leftLight?1:0}
+ else {rightLight=!rightLight;$("rightLight").style.opacity=rightLight?1:0}
+ if((side==="left"&&leftLight&&tomPos===3)||(side==="right"&&rightLight&&tomPos===4)){
+   $("warning").textContent="TOM PEARL IS HERE";
+   $("warning").style.display="block";setTimeout(()=>{$("warning").style.display="none"},900);
+ }
+}
+function cameras(){
+ if(!running||power<=0)return;
+ camOpen=!camOpen;$("cameraPanel").classList.toggle("open",camOpen);
+}
+$("startBtn").onclick=start;
+$("leftDoorBtn").onclick=()=>door("left");$("rightDoorBtn").onclick=()=>door("right");
+$("leftLightBtn").onclick=()=>light("left");$("rightLightBtn").onclick=()=>light("right");
+$("cameraBtn").onclick=cameras;
+document.querySelectorAll(".camBtn").forEach(b=>b.onclick=()=>{cam=+b.dataset.cam;updateCam()});
+document.addEventListener("keydown",e=>{
+ if(!running)return;
+ if(e.code==="KeyA")door("left");
+ if(e.code==="KeyD")door("right");
+ if(e.code==="KeyQ")light("left");
+ if(e.code==="KeyE")light("right");
+ if(e.code==="Space"){e.preventDefault();cameras()}
+});
+updateCam();
+})();
+</script>
+</body>
+</html>
